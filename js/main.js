@@ -1,9 +1,5 @@
 const three = new Threestrap.Bootstrap();
 
-const cube = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial({ color: 0xff3333 }));
-cube.position.set(1, 0, 0);
-three.scene.add(cube);
-
 // Sphere wireframe
 const geometry = new THREE.SphereGeometry(1, 32, 16);
 const wireframe = new THREE.WireframeGeometry(geometry);
@@ -32,7 +28,7 @@ function rotation_to_axes(rot_mat, size) {
 function batch_rotation_to_axes(rot_mats, nums, size) {
     let res = [];
     for (let i = 0; i < nums; ++i) {
-        res.push( rotation_to_axes(rot_mats.slice(i, i*9), size) );
+        res.push( rotation_to_axes(rot_mats.slice(9*i, 9*i+9), size) );
     }
     return res;
 }
@@ -46,7 +42,7 @@ function random_rotations_yana(nums) {
     let R = tf.stack(
         [
             tf.stack([tf.cos(tf.mul(tau, x1)), tf.sin(tf.mul(tau, x1)), tf.zeros([nums])], 1),
-            tf.stack([tf.cos(tf.mul(tau, x1).mul(-1)), tf.sin(tf.mul(tau, x1)), tf.zeros([nums])], 1),
+            tf.stack([tf.sin(tf.mul(tau, x1).mul(-1)), tf.cos(tf.mul(tau, x1)), tf.zeros([nums])], 1),
             tf.stack([tf.zeros([nums]), tf.zeros([nums]), tf.ones([nums])], 1),
         ], 1);
     let v = tf.stack(
@@ -56,14 +52,15 @@ function random_rotations_yana(nums) {
             tf.sqrt(x3.mul(-1).add(1)),
         ], 1)
     let identity = tf.eye(3, 3, [nums]);
-    let H = identity.sub(
-        v.expandDims(2).mul(2)).mul(v.expandDims(1));
+    let v_aux = v.expandDims(2).mul(2).mul(v.expandDims(1));
+    let H = identity.sub(v_aux);
     let rot_mats = tf.matMul(H, R).mul(-1);
     return rot_mats;
 }
 
-let num_rots = 10;
+let num_rots = 100;
 let rots = random_rotations_yana(num_rots);
+rots.matMul(rots.transpose([0, 2, 1])).print(); // Debug: This should be I
 let axes_list = batch_rotation_to_axes(rots.dataSync(), num_rots, 0.05);
 axes_list.map( e => three.scene.add(e) );
 
@@ -74,7 +71,6 @@ three.camera.lookAt(new THREE.Vector3(0, 0, 0));
 
 
 three.on('update', function () {
-    // cube.rotateY(0.02);
     var t = three.Time.now / 2;
     three.camera.position.set(Math.cos(t), 2, Math.sin(t));
     three.camera.lookAt(new THREE.Vector3());
