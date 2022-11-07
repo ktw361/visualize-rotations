@@ -1,5 +1,5 @@
 {
-  "name": "new-three-project",
+  "name": "visualize-rotation",
   "version": "0.0.0",
   "description": "",
   "main": "/js/main.js",
@@ -7,5 +7,5 @@
     "three": "0.138",
     "threestrap": "0.4.1"
   },
-  "author": "Aaron Bell"
+  "author": "Zhifan Zhu"
 }
