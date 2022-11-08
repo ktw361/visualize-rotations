@@ -4,7 +4,7 @@ let renderer = three.renderer;
 let scene = three.scene;
 let camera = three.camera;
 
-let num_rots = 10,
+let num_rots = parseInt(document.getElementById('num_rots').value),
     isMouseDown, onMouseDownPosition = new THREE.Vector2(),
     camera_radius = 2.5, theta = 45, phi = 60, 
     onMouseDownTheta = 45, onMouseDownPhi = 60;
