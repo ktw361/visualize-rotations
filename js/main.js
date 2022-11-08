@@ -10,6 +10,7 @@ let isMouseDown, onMouseDownPosition = new THREE.Vector2(),
 let isSpinCamera;
 
 let method = 'avro';
+const default_num_rots = 100, default_num_sphere_pts = 100, default_num_xy_rots = 3;
 display_avro();
 
 function init() {
@@ -264,7 +265,7 @@ function display_avro() {
     inp.type = 'text';
     inp.id = 'num_rots';
     inp.name = 'num_rots';
-    inp.value = '100';
+    inp.value = String(default_num_rots);
     const but = document.createElement('button');
     but.type = 'button';
     but.id = 'refresh';
@@ -289,7 +290,7 @@ function display_spiral() {
     inp1.type = 'text';
     inp1.id = 'num_sphere_pts';
     inp1.name = 'num_sphere_pts';
-    inp1.value = '2';
+    inp1.value = String(default_num_sphere_pts);
 
     const lab2 = document.createElement('label');
     lab2.htmlFor = 'num_xy_rots';
@@ -298,7 +299,7 @@ function display_spiral() {
     inp2.type = 'text';
     inp2.id = 'num_xy_rots';
     inp2.name = 'num_xy_rots';
-    inp2.value = '2';
+    inp2.value = String(default_num_xy_rots);
 
     const but = document.createElement('button');
     but.type = 'button';
