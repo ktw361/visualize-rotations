@@ -6,8 +6,9 @@ let camera = three.camera;
 
 let num_rots = parseInt(document.getElementById('num_rots').value),
     isMouseDown, onMouseDownPosition = new THREE.Vector2(),
-    camera_radius = 2.5, theta = 45, phi = 60, 
+    camera_radius = 2.5, theta = 45, phi = 60,
     onMouseDownTheta = 45, onMouseDownPhi = 60;
+let isSpinCamera;
 
 init(num_rots);
 render();
@@ -31,10 +32,13 @@ function init(num_rots) {
     const pos = ang_to_xyz(theta, phi);
     camera.position.set(pos.x, pos.y, pos.z);
     camera.lookAt(new THREE.Vector3(0, 0, 0));
+    isSpinCamera = true;
     renderer.setAnimationLoop(spin_camera);
 }
 
 function spin_camera() {
+    if (!isSpinCamera)
+        return;
     var t = three.Time.now * Math.PI * 10;
     const pos = ang_to_xyz(t, -60);
     camera.position.set(pos.x, pos.y, pos.z);
@@ -109,7 +113,8 @@ function onDocumentMouseDown( event ) {
     onMouseDownPhi = phi;
     onMouseDownPosition.x = event.clientX;
     onMouseDownPosition.y = event.clientY;
-    renderer.setAnimationLoop(null);
+    isSpinCamera = false;
+    // renderer.setAnimationLoop(null);
 }
 
 function onDocumentMouseMove( event ) {
@@ -121,9 +126,8 @@ function onDocumentMouseMove( event ) {
 
         const pos = ang_to_xyz(theta, phi);
         camera.position.set(pos.x, pos.y, pos.z);
-        camera.lookAt(new THREE.Vector3(0, 0, 0));
         camera.lookAt(new THREE.Vector3());
-        camera.updateMatrix();
+        // camera.updateMatrix();
     }
     render();
 }
@@ -133,17 +137,28 @@ function onDocumentMouseUp( event ) {
     isMouseDown = false;
     onMouseDownPosition.x = event.clientX - onMouseDownPosition.x;
     onMouseDownPosition.y = event.clientY - onMouseDownPosition.y;
-    // renderer.setAnimationLoop(spin_camera); 
 }
 
 document.addEventListener( 'mousemove', onDocumentMouseMove, false );
 document.addEventListener( 'mousedown', onDocumentMouseDown, false );
 document.addEventListener( 'mouseup', onDocumentMouseUp, false );
+document.addEventListener( 'mousewheel', (event) => {
+    camera_radius += event.deltaY / 500;
+    if (isSpinCamera) {
+        ;
+    } else {
+        const pos = ang_to_xyz(theta, phi);
+        camera.position.set(pos.x, pos.y, pos.z);
+        camera.lookAt(new THREE.Vector3());
+        // camera.updateMatrix();
+        render();
+    }
+});
 document.getElementById('refresh').addEventListener(
     'click', (event) => {
         let num_rots = parseInt(document.getElementById('num_rots').value);
-        while(scene.children.length > 0){ 
-            scene.remove(scene.children[0]); 
+        while(scene.children.length > 0){
+            scene.remove(scene.children[0]);
         }
         init(num_rots);
         render();
