@@ -7,16 +7,23 @@
   </head>
   <body>
     <div style="color: lightgray; background-color: black; position: absolute; top: 0px">
-      <label for="num_rotations">Number of Rotations:</label>
-      <input type="text" id="num_rots" name="num_rots" value=100>
-      <button type="button" id="refresh"> Refresh </button>
+		<label for="method-select">Generation Method:</label>
+		<select name="methods" id="method-select" onChange="render_options(this)">
+			<option value="avro">Random-Avro</option>
+			<option value="spiral">Spiral</option>
+		</select>
+        <div id="options"></div>
+    </div>
 
-    </div>
     <div style="color: lightgray; background-color: black; position: absolute; bottom: 0px">
-       Reference: 
-       [1] J Avro. "Fast Random Rotation Matrices." (1992)
-       [2] Spiral method. https://gist.github.com/ktw361/a1d2a108ad6ea81b853a67d2420b01be
+        <p>Reference:</p>
+        <ol>
+            <li>J Avro. "Fast Random Rotation Matrices." (1992)</li>
+            <li><a href="https://gist.github.com/ktw361/a1d2a108ad6ea81b853a67d2420b01be">Spiral method.</a></li>
+        </ol>
     </div>
-    <script src="js/main.js"></script>
+
+    <script src='js/main.js'></script>
+
   </body>
 </html>

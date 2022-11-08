@@ -4,16 +4,15 @@ let renderer = three.renderer;
 let scene = three.scene;
 let camera = three.camera;
 
-let num_rots = parseInt(document.getElementById('num_rots').value),
-    isMouseDown, onMouseDownPosition = new THREE.Vector2(),
+let isMouseDown, onMouseDownPosition = new THREE.Vector2(),
     camera_radius = 2.5, theta = 45, phi = 60,
     onMouseDownTheta = 45, onMouseDownPhi = 60;
 let isSpinCamera;
 
-init(num_rots);
-render();
+let method = 'avro';
+display_avro();
 
-function init(num_rots) {
+function init() {
     // Sphere wireframe
     const geometry = new THREE.SphereGeometry(1, 32, 16);
     const wireframe = new THREE.WireframeGeometry(geometry);
@@ -23,10 +22,20 @@ function init(num_rots) {
     line.material.transparent = true;
     scene.add(line);
 
-    let rots = random_rotations_yana(num_rots);
+    let rots, axes_list;
+    if (method == 'avro') {
+        let num_rots = parseInt(document.getElementById('num_rots').value);
+        rots = random_rotations_yana(num_rots);
+        axes_list = batch_rotation_to_axes(rots.dataSync(), num_rots, 0.05);
+        axes_list.map( e => scene.add(e) );
+    } else if (method == 'spiral') {
+        let num_sphere_pts = parseInt(document.getElementById('num_sphere_pts').value);
+        let num_xy_rots = parseInt(document.getElementById('num_xy_rots').value);
+        rots = grid_rotations_spiral(num_sphere_pts, num_xy_rots);
+        axes_list = batch_rotation_to_axes(rots.dataSync(), num_sphere_pts * num_xy_rots, 0.05);
+        axes_list.map( e => scene.add(e) );
+    }
     // rots.matMul(rots.transpose([0, 2, 1])).print(); // Debug: This should be I
-    let axes_list = batch_rotation_to_axes(rots.dataSync(), num_rots, 0.05);
-    axes_list.map( e => scene.add(e) );
 
     // Camera
     const pos = ang_to_xyz(theta, phi);
@@ -155,10 +164,11 @@ function grid_rotations_spiral(num_sphere_pts, num_xy_rots) {
     let num_rots = num_sphere_pts * num_xy_rots;
     Rxy = Rxy.expandDims(1).tile([1, num_sphere_pts, 1, 1]).reshape([num_rots, 3, 3])
     Rz = Rz.expandDims(0).tile([num_xy_rots, 1, 1, 1]).reshape([num_rots, 3, 3])
-    const rot_mats = Rxy.matMul(Rz);
+    // const rot_mats = Rxy.matMul(Rz);
+    const rot_mats = Rz.matMul(Rxy);
     return rot_mats;
 }
-grid_rotations_spiral(2, 2).print();
+// grid_rotations_spiral(2, 2).print();
 
 // Returns: nums of Matrix3
 function random_rotations_spiral(nums) {
@@ -241,12 +251,84 @@ document.addEventListener( 'mousewheel', (event) => {
         render();
     }
 });
-document.getElementById('refresh').addEventListener(
-    'click', (event) => {
-        let num_rots = parseInt(document.getElementById('num_rots').value);
-        while(scene.children.length > 0){
-            scene.remove(scene.children[0]);
-        }
-        init(num_rots);
-        render();
+function display_avro() {
+    // <label for="num_rots">Number of Rotations:</label>
+    // <input type="text" id="num_rots" name="num_rots" value=100>
+    // <button type="button" id="refresh"> Refresh </button>
+    const body = document.getElementById('options');
+    body.textContent = "";
+    const lab = document.createElement('label');
+    lab.htmlFor = 'num_rots';
+    lab.textContent = "Number of Rotations:";
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.id = 'num_rots';
+    inp.name = 'num_rots';
+    inp.value = '100';
+    const but = document.createElement('button');
+    but.type = 'button';
+    but.id = 'refresh';
+    but.textContent = 'Refresh';
+    but.addEventListener('click', (e) => {
+        reset_all();
     });
+    body.appendChild(lab);
+    body.appendChild(inp);
+    body.appendChild(but);
+
+    reset_all();
+}
+function display_spiral() {
+    const body = document.getElementById('options');
+    body.textContent = "";
+
+    const lab1 = document.createElement('label');
+    lab1.htmlFor = 'num_sphere_pts';
+    lab1.textContent = "Number of Sphere Points:";
+    const inp1 = document.createElement('input');
+    inp1.type = 'text';
+    inp1.id = 'num_sphere_pts';
+    inp1.name = 'num_sphere_pts';
+    inp1.value = '2';
+
+    const lab2 = document.createElement('label');
+    lab2.htmlFor = 'num_xy_rots';
+    lab2.textContent = "Number of XY Rotations:";
+    const inp2 = document.createElement('input');
+    inp2.type = 'text';
+    inp2.id = 'num_xy_rots';
+    inp2.name = 'num_xy_rots';
+    inp2.value = '2';
+
+    const but = document.createElement('button');
+    but.type = 'button';
+    but.id = 'refresh';
+    but.textContent = 'Refresh';
+    but.addEventListener('click', (e) => {
+        reset_all();
+    });
+    body.appendChild(lab1);
+    body.appendChild(inp1);
+    body.appendChild(document.createElement('br'));
+    body.appendChild(lab2);
+    body.appendChild(inp2);
+    body.appendChild(but);
+
+    reset_all();
+}
+function render_options(sel) {
+    if (sel.value == 'avro') {
+        method = 'avro';
+        display_avro();
+    } else if (sel.value == 'spiral') {
+        method = 'spiral';
+        display_spiral();
+    }
+}
+function reset_all() {
+    while(scene.children.length > 0){
+        scene.remove(scene.children[0]);
+    }
+    init();
+    render();
+}
