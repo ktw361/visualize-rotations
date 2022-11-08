@@ -1,6 +1,8 @@
 # Visualize Rotation Distributions
 
-# Getting started
+Go to [visualization page](https://ktw361.github.io/visualize-rotations/)
+
+# Running Locally
 
     $ npm install
     $ google-chrome index.html
