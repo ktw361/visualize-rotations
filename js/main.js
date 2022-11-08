@@ -1,13 +1,49 @@
 const three = new Threestrap.Bootstrap();
 
-// Sphere wireframe
-const geometry = new THREE.SphereGeometry(1, 32, 16);
-const wireframe = new THREE.WireframeGeometry(geometry);
-const line = new THREE.LineSegments(wireframe);
-line.material.depthTest = false;
-line.material.opacity = 0.10;
-line.material.transparent = true;
-three.scene.add(line);
+let renderer = three.renderer;
+let scene = three.scene;
+let camera = three.camera;
+
+let num_rots = 10,
+    isMouseDown, onMouseDownPosition = new THREE.Vector2(),
+    camera_radius = 2.5, theta = 45, phi = 60, 
+    onMouseDownTheta = 45, onMouseDownPhi = 60;
+
+init(num_rots);
+render();
+
+function init(num_rots) {
+    // Sphere wireframe
+    const geometry = new THREE.SphereGeometry(1, 32, 16);
+    const wireframe = new THREE.WireframeGeometry(geometry);
+    const line = new THREE.LineSegments(wireframe);
+    line.material.depthTest = false;
+    line.material.opacity = 0.10;
+    line.material.transparent = true;
+    scene.add(line);
+
+    let rots = random_rotations_yana(num_rots);
+    // rots.matMul(rots.transpose([0, 2, 1])).print(); // Debug: This should be I
+    let axes_list = batch_rotation_to_axes(rots.dataSync(), num_rots, 0.05);
+    axes_list.map( e => scene.add(e) );
+
+    // Camera
+    const pos = ang_to_xyz(theta, phi);
+    camera.position.set(pos.x, pos.y, pos.z);
+    camera.lookAt(new THREE.Vector3(0, 0, 0));
+    renderer.setAnimationLoop(spin_camera);
+}
+
+function spin_camera() {
+    var t = three.Time.now * Math.PI * 10;
+    const pos = ang_to_xyz(t, -60);
+    camera.position.set(pos.x, pos.y, pos.z);
+    camera.lookAt(new THREE.Vector3());
+}
+
+function render() {
+    renderer.render(scene, camera);
+}
 
 // Input: Array of 9
 // Output: AxesHelper
@@ -58,20 +94,57 @@ function random_rotations_yana(nums) {
     return rot_mats;
 }
 
-let num_rots = 100;
-let rots = random_rotations_yana(num_rots);
-rots.matMul(rots.transpose([0, 2, 1])).print(); // Debug: This should be I
-let axes_list = batch_rotation_to_axes(rots.dataSync(), num_rots, 0.05);
-axes_list.map( e => three.scene.add(e) );
+function ang_to_xyz(theta, phi) {
+    let vec = new THREE.Vector3();
+    vec.x = camera_radius * Math.sin(theta * Math.PI / 360) * Math.cos(phi * Math.PI / 360);
+    vec.y = camera_radius * Math.sin(phi * Math.PI / 360);
+    vec.z = camera_radius * Math.cos(theta * Math.PI / 360) * Math.cos(phi * Math.PI / 360);
+    return vec;
+}
 
+function onDocumentMouseDown( event ) {
+    // event.preventDefault();
+    isMouseDown = true;
+    onMouseDownTheta = theta;
+    onMouseDownPhi = phi;
+    onMouseDownPosition.x = event.clientX;
+    onMouseDownPosition.y = event.clientY;
+    renderer.setAnimationLoop(null);
+}
 
-// Camera
-three.camera.position.set(1, 1, 2);
-three.camera.lookAt(new THREE.Vector3(0, 0, 0));
+function onDocumentMouseMove( event ) {
+    event.preventDefault();
+    if ( isMouseDown ) {
+        theta = - ( ( event.clientX - onMouseDownPosition.x ) * 0.5 ) + onMouseDownTheta;
+        phi = ( ( event.clientY - onMouseDownPosition.y ) * 0.5 ) + onMouseDownPhi;
+        phi = Math.min( 180, Math.max( 0, phi ) );
 
+        const pos = ang_to_xyz(theta, phi);
+        camera.position.set(pos.x, pos.y, pos.z);
+        camera.lookAt(new THREE.Vector3(0, 0, 0));
+        camera.lookAt(new THREE.Vector3());
+        camera.updateMatrix();
+    }
+    render();
+}
 
-three.on('update', function () {
-    var t = three.Time.now / 2;
-    three.camera.position.set(Math.cos(t), 2, Math.sin(t));
-    three.camera.lookAt(new THREE.Vector3());
-});
+function onDocumentMouseUp( event ) {
+    event.preventDefault();
+    isMouseDown = false;
+    onMouseDownPosition.x = event.clientX - onMouseDownPosition.x;
+    onMouseDownPosition.y = event.clientY - onMouseDownPosition.y;
+    // renderer.setAnimationLoop(spin_camera); 
+}
+
+document.addEventListener( 'mousemove', onDocumentMouseMove, false );
+document.addEventListener( 'mousedown', onDocumentMouseDown, false );
+document.addEventListener( 'mouseup', onDocumentMouseUp, false );
+document.getElementById('refresh').addEventListener(
+    'click', (event) => {
+        let num_rots = parseInt(document.getElementById('num_rots').value);
+        while(scene.children.length > 0){ 
+            scene.remove(scene.children[0]); 
+        }
+        init(num_rots);
+        render();
+    });
