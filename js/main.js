@@ -69,6 +69,7 @@ function rotation_to_axes(rot_mat, size) {
         rot_mat[0], rot_mat[1], rot_mat[2], - rot_mat[2],
         rot_mat[3], rot_mat[4], rot_mat[5], - rot_mat[5],
         rot_mat[6], rot_mat[7], rot_mat[8], - rot_mat[8],
+                 0,          0,          0,            1
     );
     axesHelper.applyMatrix4(T);
     return axesHelper;
@@ -141,10 +142,10 @@ function grid_rotations_spiral(num_sphere_pts, num_xy_rots) {
         epsilon = 0.33;
     }
 
-    const goldenRatio = (1 + 5**0.5)/2;
+    const goldenRatio = 1.618033988749895; // (1 + 5**0.5)/2;
     const i = tf.range(0, n);
     const theta = i.mul(2 * Math.PI / goldenRatio);
-    const phi = tf.acos( i.add(epsilon).mul(-2/(n-1+2*epsilon)).add(1) ); // TODO
+    const phi = tf.acos( i.add(epsilon).mul(-2/(n-1+2*epsilon)).add(1) );
     const x = tf.cos(theta).mul(tf.sin(phi));
     const y = tf.sin(theta).mul(tf.sin(phi));
     const z = tf.cos(phi);
@@ -153,7 +154,7 @@ function grid_rotations_spiral(num_sphere_pts, num_xy_rots) {
     const up_vecs = tf.stack([tf.zeros([n]), tf.ones([n]), tf.zeros([n])], 1);
     const y_vecs = normalize( cross(z_vecs, up_vecs) );
     const x_vecs = normalize( cross(y_vecs, z_vecs) );
-    let Rz = tf.stack([x_vecs, y_vecs, z_vecs], dim=1)  // (num_sphere_pts, 3, 3)
+    let Rz = tf.stack([x_vecs, y_vecs, z_vecs], dim=2)  // (num_sphere_pts, 3, 3)
 
     const rads = tf.range(0, num_xy_rots).mul(2*Math.PI/num_xy_rots);
     let Rxy = tf.stack([
@@ -165,8 +166,7 @@ function grid_rotations_spiral(num_sphere_pts, num_xy_rots) {
     let num_rots = num_sphere_pts * num_xy_rots;
     Rxy = Rxy.expandDims(1).tile([1, num_sphere_pts, 1, 1]).reshape([num_rots, 3, 3])
     Rz = Rz.expandDims(0).tile([num_xy_rots, 1, 1, 1]).reshape([num_rots, 3, 3])
-    // const rot_mats = Rxy.matMul(Rz);
-    const rot_mats = Rz.matMul(Rxy);
+    const rot_mats = Rz.matMul(Rxy);  // First rotate x-y coord (local), then Rz
     return rot_mats;
 }
 // grid_rotations_spiral(2, 2).print();
